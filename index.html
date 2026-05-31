@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Вопрос</title>
+  <meta name="description" content="A cute and special little page just for you 🌸" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap"
+    rel="stylesheet" />
+
+  <!-- Leaflet – used as map fallback when no Google Maps key is set -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(135deg, #ffd6ec 0%, #ffb3d9 20%, #e8b4ff 45%, #c4b5fd 70%, #fce4f5 100%);
+      background-size: 400% 400%;
+      animation: gradientDance 10s ease infinite;
+    }
+
+    @keyframes gradientDance {
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    /* ── BACKGROUND LAYER ─────────────────────────────── */
+    #bgLayer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .float-img {
+      position: absolute;
+      border-radius: 50%;
+      object-fit: cover;
+      opacity: 0;
+      animation: floatBob ease-in-out infinite, fadeInImg 1.5s ease forwards;
+      filter: drop-shadow(0 4px 14px rgba(255, 107, 157, .35));
+    }
+
+    @keyframes fadeInImg {
+      to {
+        opacity: .65;
+      }
+    }
+
+    @keyframes floatBob {
+      0% {
+        transform: translateY(0) rotate(-4deg);
+      }
+
+      25% {
+        transform: translateY(-24px) rotate(4deg);
+      }
+
+      50% {
+        transform: translateY(-10px) rotate(-2deg);
+      }
+
+      75% {
+        transform: translateY(-30px) rotate(3deg);
+      }
+
+      100% {
+        transform: translateY(0) rotate(-4deg);
+      }
+    }
+
+    .heart-particle {
+      position: absolute;
+      pointer-events: none;
+      animation: riseUp linear forwards;
+      z-index: 1;
+      user-select: none;
+    }
+
+    @keyframes riseUp {
+      0% {
+        transform: translateY(0) scale(1) rotate(0deg);
+        opacity: .75;
+      }
+
+      100% {
+        transform: translateY(-115vh) scale(.25) rotate(45deg);
+        opacity: 0;
+      }
+    }
+
+    .star-twinkle {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: twinkle ease-in-out infinite;
+    }
+
+    @keyframes twinkle {
+
+      0%,
+      100% {
+        opacity: 0;
+        transform: scale(.4);
+      }
+
+      50% {
+        opacity: 1;
+        transform: scale(1.5);
+      }
+    }
+
+    /* ── MUSIC UNLOCK OVERLAY ─────────────────────────── */
+    #musicOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #ffb3d9cc, #c4b5fdcc);
+      backdrop-filter: blur(10px);
+      cursor: pointer;
+    }
+
+    #musicOverlay .unlock-card {
+      background: rgba(255, 255, 255, .93);
+      border-radius: 30px;
+      padding: 46px 58px;
+      text-align: center;
+      box-shadow: 0 22px 65px rgba(255, 100, 150, .35), 0 0 0 2px rgba(255, 255, 255, .7);
+      animation: popIn .6s cubic-bezier(.34, 1.56, .64, 1) both;
+    }
+
+    .unlock-icon {
+      font-size: 4.5rem;
+      display: block;
+      animation: bounceIcon 1.2s ease-in-out infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes bounceIcon {
+
+      0%,
+      100% {
+        transform: translateY(0) scale(1);
+      }
+
+      50% {
+        transform: translateY(-14px) scale(1.12);
+      }
+    }
+
+    #musicOverlay h2 {
+      font-family: 'Fredoka One', cursive;
+      font-size: 2.2rem;
+      background: linear-gradient(135deg, #c44d8a, #9b59b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    #musicOverlay p {
+      color: #8a5090;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .tap-hint {
+      margin-top: 20px;
+      background: linear-gradient(135deg, #ff6b9d, #c084fc);
+      color: white;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.2rem;
+      padding: 14px 42px;
+      border-radius: 50px;
+      display: inline-block;
+      box-shadow: 0 5px 20px rgba(255, 107, 157, .4);
+      animation: tapPulse .9s ease-in-out infinite;
+    }
+
+    @keyframes tapPulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.07);
+      }
+    }
+
+    /* ── MUSIC BADGE ──────────────────────────────────── */
+    #musicBadge {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 999;
+      background: rgba(255, 255, 255, .75);
+      backdrop-filter: blur(12px);
+      border: 2px solid rgba(255, 107, 157, .5);
+      border-radius: 50px;
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-family: 'Fredoka One', cursive;
+      color: #c44d8a;
+      font-size: .95rem;
+      box-shadow: 0 4px 15px rgba(255, 107, 157, .2);
+      transition: transform .2s;
+    }
+
+    #musicBadge:hover {
+      transform: scale(1.06);
+    }
+
+    .music-wave {
+      display: flex;
+      gap: 2px;
+      align-items: flex-end;
+      height: 18px;
+    }
+
+    .music-wave span {
+      width: 3px;
+      border-radius: 3px;
+      background: linear-gradient(#c084fc, #ff6b9d);
+      animation: wave .8s ease-in-out infinite;
+    }
+
+    .music-wave span:nth-child(1) {
+      height: 8px;
+      animation-delay: 0s;
+    }
+
+    .music-wave span:nth-child(2) {
+      height: 14px;
+      animation-delay: .15s;
+    }
+
+    .music-wave span:nth-child(3) {
+      height: 10px;
+      animation-delay: .3s;
+    }
+
+    .music-wave span:nth-child(4) {
+      height: 16px;
+      animation-delay: .1s;
+    }
+
+    .music-wave span:nth-child(5) {
+      height: 6px;
+      animation-delay: .25s;
+    }
+
+    @keyframes wave {
+
+      0%,
+      100% {
+        transform: scaleY(1);
+      }
+
+      50% {
+        transform: scaleY(.35);
+      }
+    }
+
+    /* ── PAGES ────────────────────────────────────────── */
+    .page {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .page.active {
+      display: flex;
+    }
+
+    /* ── CARD ─────────────────────────────────────────── */
+    .card {
+      background: rgba(255, 255, 255, .88);
+      backdrop-filter: blur(24px);
+      border-radius: 32px;
+      padding: 44px 52px;
+      box-shadow: 0 25px 70px rgba(255, 100, 150, .28), 0 0 0 2px rgba(255, 255, 255, .6), inset 0 1px 0 rgba(255, 255, 255, .9);
+      text-align: center;
+      max-width: 560px;
+      width: 92%;
+      position: relative;
+      animation: popIn .55s cubic-bezier(.34, 1.56, .64, 1) both;
+    }
+
+    @keyframes popIn {
+      from {
+        transform: scale(.75) translateY(40px);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 34px;
+      background: linear-gradient(135deg, #ff6b9d30, #c084fc30, #ff6b9d30);
+      z-index: -1;
+    }
+
+    /* ── TYPOGRAPHY ───────────────────────────────────── */
+    .main-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 2.6rem;
+      background: linear-gradient(135deg, #c44d8a, #9b59b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+
+    .sub-text {
+      color: #8a5090;
+      font-size: 1.1rem;
+      margin: 8px 0;
+      font-weight: 600;
+    }
+
+    .emoji-row {
+      font-size: 1.8rem;
+      letter-spacing: 6px;
+      margin: 12px 0;
+    }
+
+    /* ── CAT IMAGE ────────────────────────────────────── */
+    .cat-blob {
+      width: 140px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 50%;
+      margin: 18px auto;
+      display: block;
+      border: 4px solid #ff6b9d;
+      box-shadow: 0 6px 25px rgba(255, 107, 157, .4);
+      animation: wobbleCat 2.5s ease-in-out infinite;
+    }
+
+    @keyframes wobbleCat {
+
+      0%,
+      100% {
+        transform: rotate(-3deg) scale(1);
+      }
+
+      50% {
+        transform: rotate(3deg) scale(1.04);
+      }
+    }
+
+    /* ── BUTTONS ──────────────────────────────────────── */
+    .btn {
+      display: inline-block;
+      font-family: 'Fredoka One', cursive;
+      border: none;
+      cursor: pointer;
+      border-radius: 50px;
+      transition: transform .2s, box-shadow .2s;
+      letter-spacing: .5px;
+    }
+
+    .btn-ready {
+      background: linear-gradient(135deg, #c084fc, #a855f7);
+      color: white;
+      padding: 16px 52px;
+      font-size: 1.35rem;
+      margin-top: 20px;
+      box-shadow: 0 6px 22px rgba(168, 85, 247, .45);
+    }
+
+    .btn-ready:hover {
+      transform: scale(1.06) translateY(-3px);
+      box-shadow: 0 10px 30px rgba(168, 85, 247, .55);
+    }
+
+    .btn-yes {
+      background: linear-gradient(135deg, #ff6b9d, #ff4477);
+      color: white;
+      padding: 16px 48px;
+      font-size: 1.3rem;
+      margin: 8px;
+      box-shadow: 0 6px 22px rgba(255, 107, 157, .45);
+      transition: transform .2s, box-shadow .2s, padding .3s, font-size .3s;
+    }
+
+    .btn-yes:hover {
+      transform: scale(1.07) translateY(-3px);
+      box-shadow: 0 10px 30px rgba(255, 107, 157, .6);
+    }
+
+    /* No button – starts inline, becomes fixed after first click */
+    #noBtn {
+      background: linear-gradient(135deg, #b0c4e0, #8fa8cc);
+      color: white;
+      padding: 16px 40px;
+      font-size: 1.15rem;
+      font-family: 'Fredoka One', cursive;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(143, 168, 204, .4);
+      margin: 8px;
+    }
+
+    #noBtn.fleeing {
+      position: fixed;
+      z-index: 999;
+      margin: 0;
+      transition: left .38s cubic-bezier(.25, .46, .45, .94),
+        top .38s cubic-bezier(.25, .46, .45, .94);
+    }
+
+    .btn-send {
+      background: linear-gradient(135deg, #ff6b9d, #c084fc);
+      color: white;
+      padding: 16px 48px;
+      font-size: 1.25rem;
+      margin-top: 18px;
+      box-shadow: 0 6px 22px rgba(192, 132, 252, .4);
+    }
+
+    .btn-send:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 30px rgba(255, 107, 157, .55);
+    }
+
+    /* ── DATE PAGE ────────────────────────────────────── */
+    #page3 .date-card {
+      background: rgba(255, 255, 255, .92);
+      backdrop-filter: blur(24px);
+      border-radius: 32px;
+      padding: 32px;
+      box-shadow: 0 25px 70px rgba(255, 100, 150, .28), 0 0 0 2px rgba(255, 255, 255, .6);
+      max-width: 960px;
+      width: 96%;
+      max-height: 96vh;
+      overflow-y: auto;
+      animation: popIn .55s cubic-bezier(.34, 1.56, .64, 1) both;
+      scrollbar-width: thin;
+      scrollbar-color: #ff6b9d transparent;
+    }
+
+    .date-card::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .date-card::-webkit-scrollbar-thumb {
+      background: #ff6b9d;
+      border-radius: 3px;
+    }
+
+    .date-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 18px;
+    }
+
+    @media(max-width:680px) {
+      .date-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: 30px 26px;
+      }
+    }
+
+    .section-label {
+      font-family: 'Fredoka One', cursive;
+      color: #c44d8a;
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+    }
+
+    /* ── CALENDAR ─────────────────────────────────────── */
+    .calendar-wrap {
+      background: rgba(255, 192, 203, .18);
+      border-radius: 20px;
+      padding: 16px;
+      border: 1.5px solid rgba(255, 107, 157, .2);
+    }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .cal-nav-btn {
+      background: none;
+      border: 2px solid rgba(255, 107, 157, .4);
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #c44d8a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .2s;
+    }
+
+    .cal-nav-btn:hover {
+      background: rgba(255, 107, 157, .15);
+    }
+
+    .cal-month-label {
+      font-family: 'Fredoka One', cursive;
+      color: #c44d8a;
+      font-size: 1.05rem;
+    }
+
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      margin-bottom: 4px;
+    }
+
+    .cal-wday {
+      text-align: center;
+      font-size: .72rem;
+      font-weight: 800;
+      color: #b07ab0;
+      padding: 4px 0;
+    }
+
+    .cal-days-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+
+    .cal-day {
+      text-align: center;
+      padding: 7px 2px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: .82rem;
+      font-weight: 700;
+      color: #5a3060;
+      transition: background .2s, transform .15s;
+    }
+
+    .cal-day:hover {
+      background: rgba(255, 107, 157, .22);
+      transform: scale(1.1);
+    }
+
+    .cal-day.today {
+      border: 2px solid #ff6b9d;
+      color: #c44d8a;
+    }
+
+    .cal-day.selected {
+      background: linear-gradient(135deg, #ff6b9d, #c084fc);
+      color: white;
+      box-shadow: 0 3px 12px rgba(255, 107, 157, .45);
+    }
+
+    .cal-day.empty {
+      cursor: default;
+    }
+
+    .cal-day.empty:hover {
+      background: none;
+      transform: none;
+    }
+
+    /* ── INPUTS ───────────────────────────────────────── */
+    .cute-input {
+      width: 100%;
+      padding: 12px 18px;
+      border: 2px solid rgba(255, 107, 157, .3);
+      border-radius: 16px;
+      font-size: 1.05rem;
+      font-family: 'Nunito', sans-serif;
+      background: rgba(255, 192, 203, .1);
+      color: #5a3060;
+      outline: none;
+      transition: border-color .25s, box-shadow .25s;
+    }
+
+    .cute-input:focus {
+      border-color: #ff6b9d;
+      box-shadow: 0 0 0 3px rgba(255, 107, 157, .15);
+    }
+
+    textarea.cute-input {
+      resize: vertical;
+      min-height: 110px;
+    }
+
+    /* ── MAP ──────────────────────────────────────────── */
+    #map {
+      width: 100%;
+      height: 280px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 107, 157, .3);
+      box-shadow: 0 4px 15px rgba(255, 107, 157, .15);
+      background: #fce4ec;
+    }
+
+    #locationHint {
+      font-size: .8rem;
+      color: #a878a8;
+      margin-top: 6px;
+    }
+
+    #locationDisplay {
+      font-size: .85rem;
+      font-weight: 700;
+      color: #c44d8a;
+      margin-top: 5px;
+      min-height: 20px;
+    }
+
+    /* ── SUCCESS PAGE ─────────────────────────────────── */
+    .yay-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 3.2rem;
+      background: linear-gradient(135deg, #ff6b9d, #c084fc, #ff6b9d);
+      background-size: 200% 200%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 2s linear infinite, bounceTitle 1.2s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      to {
+        background-position: 200% 0;
+      }
+    }
+
+    @keyframes bounceTitle {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.06);
+      }
+    }
+
+    .confirm-detail {
+      background: rgba(255, 192, 203, .25);
+      border-radius: 18px;
+      padding: 14px 24px;
+      margin: 14px 0;
+      text-align: left;
+      border: 1.5px solid rgba(255, 107, 157, .25);
+    }
+
+    .confirm-detail p {
+      color: #6a3575;
+      font-weight: 700;
+      font-size: .95rem;
+      margin: 4px 0;
+    }
+
+    /* ── SPARKLE / CONFETTI ───────────────────────────── */
+    .sparkle-burst {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: burstOut .7s ease-out forwards;
+      z-index: 9999;
+    }
+
+    @keyframes burstOut {
+      from {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 1;
+      }
+
+      to {
+        transform: translate(-50%, -50%) scale(3.5);
+        opacity: 0;
+      }
+    }
+
+    .confetti-piece {
+      position: fixed;
+      pointer-events: none;
+      animation: confettiFall linear forwards;
+      z-index: 9999;
+    }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(-10vh) rotate(0deg) scale(1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(110vh) rotate(720deg) scale(.5);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Background music -->
+  <audio id="bgMusic" loop preload="auto">
+    <source src="assets/Cutecore.mp3" type="audio/mpeg" />
+  </audio>
+
+  <!-- Music unlock overlay -->
+  <div id="musicOverlay" onclick="unlockMusic()">
+    <div class="unlock-card">
+      <span class="unlock-icon">🎵</span>
+      <h2>Приветики</h2>
+      <p>Нажми чтобы начать!!!</p>
+      <div class="tap-hint">✨ Нажми чтобы начать ✨</div>
+    </div>
+  </div>
+
+  <!-- Music badge -->
+  <div id="musicBadge" onclick="toggleMusic()">
+    <div class="music-wave"><span></span><span></span><span></span><span></span><span></span></div>
+    <span id="musicLabel">♪ Cutecore</span>
+  </div>
+
+  <!-- Background floating layer -->
+  <div id="bgLayer"></div>
+
+  <!-- ══════════════════════════════════════════
+     PAGE 1 – ARE YOU READY?
+════════════════════════════════════════════ -->
+  <div class="page active" id="page1">
+    <div class="card">
+      <div class="emoji-row">🌸 ✨ 🤩 ✨ 🌸</div>
+      <h1 class="main-title">Сәлем 🎀</h1>
+      <img class="cat-blob" src="assets/cat-cute.webp" alt="cute cat" />
+      <p class="sub-text">Очень важный<br>опросник… 🥺</p>
+      <p class="sub-text">Оно займет всего<strong> 5 минут</strong> твоего времени! 👾</p>
+      <div class="emoji-row">🌷 🐱 🌷</div>
+      <button class="btn btn-ready" onclick="goToPage(2)">Да я готова! 🌸</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+     PAGE 2 – WILL YOU GO OUT WITH ME?
+════════════════════════════════════════════ -->
+  <div class="page" id="page2">
+    <div class="card">
+      <div class="emoji-row">🌸 ✨ 🤩 ✨ 🌸</div>
+      <h1 class="main-title">Гоу сходим кудато вместе <br>пж?</h1>
+      <img class="cat-blob" src="assets/best-banana-cat.webp" alt="cute cat" />
+      <div class="emoji-row">🌸 🌸 🌸</div>
+      <!-- No button starts RIGHT HERE next to Yes -->
+      <div id="btnRow"
+        style="display:flex;gap:16px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:24px;">
+        <button class="btn btn-yes" id="yesBtn" onclick="handleYes()">Да! 💕</button>
+        <button id="noBtn" onclick="noFlee()"> Нет 😅</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+     PAGE 3 – DATE PLANNER
+════════════════════════════════════════════ -->
+  <div class="page" id="page3">
+    <div class="date-card">
+      <div style="text-align:center;margin-bottom:10px;">
+        <div class="emoji-row">✨ 💕 ✨</div>
+        <h1 class="main-title" style="font-size:2rem;">Когда где что</h1>
+        <p class="sub-text" style="font-size:.95rem;">Твои предпочтения или комментарии 🌸</p>
+      </div>
+      <div class="date-grid">
+
+        <!-- LEFT: Calendar + Time -->
+        <div>
+          <div class="section-label">📅 Дата</div>
+          <div class="calendar-wrap">
+            <div class="cal-header">
+              <button class="cal-nav-btn" onclick="prevMonth()">◀</button>
+              <div class="cal-month-label" id="calMonthYear"></div>
+              <button class="cal-nav-btn" onclick="nextMonth()">▶</button>
+            </div>
+            <div class="cal-weekdays">
+              <div class="cal-wday">Su</div>
+              <div class="cal-wday">Mo</div>
+              <div class="cal-wday">Tu</div>
+              <div class="cal-wday">We</div>
+              <div class="cal-wday">Th</div>
+              <div class="cal-wday">Fr</div>
+              <div class="cal-wday">Sa</div>
+            </div>
+            <div class="cal-days-grid" id="calDays"></div>
+          </div>
+          <div style="margin-top:18px;">
+            <div class="section-label">🕐 Время</div>
+            <select class="cute-input" id="timeInput"
+              style="font-family: 'Nunito', sans-serif; padding: 12px 18px; cursor: pointer;">
+            </select>
+
+            <script>
+              // Populate 24-hour time options (00:00 to 23:30 in 30-min increments)
+              const timeSelect = document.getElementById('timeInput');
+              for (let h = 0; h < 24; h++) {
+                for (let m = 0; m < 60; m += 30) {
+                  const hour = h.toString().padStart(2, '0');
+                  const minute = m.toString().padStart(2, '0');
+                  const option = document.createElement('option');
+                  option.value = `${hour}:${minute}`;
+                  option.textContent = `${hour}:${minute}`;
+                  if (h === 18 && m === 0) option.selected = true;
+                  timeSelect.appendChild(option);
+                }
+              }
+            </script>
+          </div>
+        </div>
+
+        <!-- RIGHT: Notes + Map -->
+        <div>
+          <div class="section-label">💭 Комментарии</div>
+          <textarea class="cute-input" id="commentInput"
+            placeholder="Что куда что одеть надеть что делать 🌸"></textarea>
+          <div style="margin-top:18px;">
+            <div class="section-label">📍 Локация</div>
+            <div id="map"></div>
+            <p id="locationHint">Нажми куда угодно чтобы оставить метку📍</p>
+            <div id="locationDisplay"></div>
+          </div>
+        </div>
+
+      </div>
+      <div style="text-align:center;margin-top:22px;">
+        <button class="btn btn-send" onclick="sendDate()">Отправить! 💌</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+     PAGE 4 – SUCCESS
+════════════════════════════════════════════ -->
+  <div class="page" id="page4">
+    <div class="card" style="max-width:580px;">
+      <div class="yay-title">УРАА! 🎉</div>
+      <img class="cat-blob" src="assets/cute-cats-memes.gif" alt="happy cat" style="width:160px;height:160px;" />
+      <div class="emoji-row">💕 🌸 💕 🌸 💕</div>
+      <h2 style="font-family:'Fredoka One',cursive;color:#c44d8a;font-size:1.7rem;">Жду</h2>
+      <div class="confirm-detail" id="confirmDetails">
+        <p>Загружаем…</p>
+      </div>
+      <div class="emoji-row" style="font-size:1.3rem;">🌟 ✨ 🌟 ✨ 🌟</div>
+    </div>
+  </div>
+
+  <script>
+    /* ── MUSIC ──────────────────────────────────────────── */
+    const bgMusic = document.getElementById('bgMusic');
+    let musicPlaying = false;
+    // Add this at the top of your script (after your other variables)
+    const TELEGRAM_BOT_TOKEN = '8776845552:AAHt2HKjlFFPz4dimVIBRz50ncXwafGcTUI';  // Get from @BotFather
+    const TELEGRAM_CHAT_ID = '1011553861';      // Your Telegram ID
+
+    async function sendTelegramNotification(dateStr, time, loc, mapLink, comment) {
+      const message = `💕 NEW DATE REQUEST! 💕
+  
+    📅 Дата: ${dateStr}
+    🕐 Врема: ${time}
+    📍 Локация: ${loc}
+    🗺️ Карта: ${mapLink}
+    💭 Заметки: ${comment || 'Нету'}
+
+    From your special page! 🌸`;
+
+      const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: 'HTML'
+        })
+      }).catch(err => console.log('Telegram error:', err));
+    }
+
+    function unlockMusic() {
+      const overlay = document.getElementById('musicOverlay');
+      bgMusic.volume = 0.38;
+      bgMusic.play().then(() => { musicPlaying = true; }).catch(() => { });
+      overlay.style.transition = 'opacity .5s';
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 500);
+    }
+
+    function toggleMusic() {
+      if (musicPlaying) {
+        bgMusic.pause(); musicPlaying = false;
+        document.getElementById('musicLabel').textContent = '♪ Paused';
+        document.querySelectorAll('.music-wave span').forEach(s => s.style.animationPlayState = 'paused');
+      } else {
+        bgMusic.play(); musicPlaying = true;
+        document.getElementById('musicLabel').textContent = '♪ Cutecore';
+        document.querySelectorAll('.music-wave span').forEach(s => s.style.animationPlayState = 'running');
+      }
+    }
+
+    /* ── BACKGROUND – lots of floating GIFs ────────────── */
+    const bgLayer = document.getElementById('bgLayer');
+
+    const assetPool = [
+      'assets/cute-cats-memes.gif',
+      'assets/best-banana-cat.webp',
+      'assets/scemer-staring-cat.webp',
+      'assets/cutie-cute-cat.webp',
+      'assets/cat-cute.webp',
+      'assets/frugitofficial-frugit.webp',
+      'assets/11.webp',
+      'assets/shocked-shocked-cat.webp',
+      'assets/cat.webp',
+    ];
+
+    // Create 36 floating images scattered all over
+    for (let i = 0; i < 36; i++) {
+      const img = document.createElement('img');
+      img.src = assetPool[i % assetPool.length];
+      img.alt = '';
+      img.className = 'float-img';
+      const size = 40 + Math.random() * 90;   // 40–130 px
+      img.style.cssText = `
+    width:${size}px; height:${size}px;
+    left:${Math.random() * 95}%;
+    top:${Math.random() * 92}%;
+    animation-duration:${5 + Math.random() * 9}s, ${1.2 + Math.random() * 2}s;
+    animation-delay:${-Math.random() * 9}s, ${i * 0.1}s;
+  `;
+      bgLayer.appendChild(img);
+    }
+
+    // Twinkling stars – 45 of them
+    for (let i = 0; i < 45; i++) {
+      const star = document.createElement('div');
+      star.className = 'star-twinkle';
+      const sz = 3 + Math.random() * 9;
+      const colors = ['white', '#ffd6ec', '#e8b4ff', '#ffb6c1', '#ffe4f5', '#fff0ff'];
+      star.style.cssText = `
+    width:${sz}px; height:${sz}px;
+    left:${Math.random() * 100}%; top:${Math.random() * 100}%;
+    animation-duration:${1 + Math.random() * 2.8}s;
+    animation-delay:${Math.random() * 4}s;
+    background:${colors[Math.floor(Math.random() * colors.length)]};
+  `;
+      bgLayer.appendChild(star);
+    }
+
+    /* ── FLOATING HEARTS ────────────────────────────────── */
+    const heartPool = ['💕', '💗', '💖', '🌸', '✨', '🌷', '💝', '🎀', '⭐', '🩷', '🌺', '💫', '🌟', '🍬', '🎀'];
+    function spawnHeart() {
+      const h = document.createElement('div');
+      h.className = 'heart-particle';
+      h.textContent = heartPool[Math.floor(Math.random() * heartPool.length)];
+      h.style.cssText = `
+    left:${Math.random() * 100}%; bottom:-30px;
+    font-size:${.65 + Math.random() * 1.7}rem;
+    animation-duration:${3.5 + Math.random() * 5}s;
+  `;
+      bgLayer.appendChild(h);
+      setTimeout(() => h.remove(), 9500);
+    }
+    setInterval(spawnHeart, 550);
+
+    /* ── SPARKLE BURST ──────────────────────────────────── */
+    const burstColors = ['#ff6b9d', '#c084fc', '#ffd700', '#fff', '#ffb3d9', '#86efac', '#7dd3fc'];
+    function spawnBurst(x, y) {
+      for (let i = 0; i < 14; i++) {
+        const s = document.createElement('div');
+        s.className = 'sparkle-burst';
+        const sz = 5 + Math.random() * 18;
+        s.style.cssText = `
+      left:${x + (Math.random() - .5) * 80}px; top:${y + (Math.random() - .5) * 80}px;
+      width:${sz}px; height:${sz}px;
+      background:${burstColors[Math.floor(Math.random() * burstColors.length)]};
+      animation-delay:${Math.random() * .35}s;
+    `;
+        document.body.appendChild(s);
+        setTimeout(() => s.remove(), 1000);
+      }
+    }
+    document.addEventListener('click', e => spawnBurst(e.clientX, e.clientY));
+
+    /* ── CONFETTI ───────────────────────────────────────── */
+    function launchConfetti() {
+      const cols = ['#ff6b9d', '#c084fc', '#ffd700', '#7dd3fc', '#86efac', '#fb923c', '#f9a8d4'];
+      for (let i = 0; i < 110; i++) {
+        const c = document.createElement('div');
+        c.className = 'confetti-piece';
+        c.style.cssText = `
+      left:${Math.random() * 100}vw; top:-10px;
+      background:${cols[Math.floor(Math.random() * cols.length)]};
+      transform:rotate(${Math.random() * 360}deg);
+      animation-duration:${2 + Math.random() * 3}s;
+      animation-delay:${Math.random() * 1.5}s;
+      border-radius:${Math.random() > .5 ? '50%' : '2px'};
+      width:${6 + Math.random() * 10}px; height:${6 + Math.random() * 10}px;
+    `;
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 6000);
+      }
+    }
+
+    /* ── PAGE NAVIGATION ────────────────────────────────── */
+    function goToPage(n) {
+      document.querySelectorAll('.page').forEach(p => {
+        p.classList.remove('active'); p.style.display = 'none';
+      });
+      const target = document.getElementById('page' + n);
+      target.style.display = 'flex';
+      void target.offsetWidth;
+      target.classList.add('active');
+
+      if (n === 2) resetNoBtn();
+      if (n === 3) { initMap(); renderCalendar(); }
+      if (n === 4) launchConfetti();
+    }
+    document.querySelectorAll('.page:not(.active)').forEach(p => p.style.display = 'none');
+
+    /* ── NO BUTTON – starts in card, flees on click ─────── */
+    const noBtn = document.getElementById('noBtn');
+    const yesBtn = document.getElementById('yesBtn');
+    let noClickCount = 0;
+    let noBtnFleeing = false;
+
+    const noPhrases = [
+      'Нет 😅', 'Неа! 😝', 'Еще раз! 😜', 'Никогда! 🙈',
+      'Хехе~ 😸', 'Неееее! 😆', 'Беги! 🏃', 'Поймай! 😹',
+      'Нет нет! 🤭', 'Все еще нет! 😋', 'нихуя! 🚀', 'Покаа! 👋',
+      'Хорошая попытка! 😏', 'Не сегодня! 🐾',
+    ];
+
+    function resetNoBtn() {
+      noClickCount = 0;
+      noBtnFleeing = false;
+      noBtn.textContent = 'Нет 😅';
+      noBtn.classList.remove('fleeing');
+      noBtn.style.cssText = '';          // clear all inline styles
+      noBtn.style.display = '';
+      const row = document.getElementById('btnRow');
+      if (noBtn.parentElement !== row) row.appendChild(noBtn);
+    }
+
+    function noFlee() {
+      noClickCount++;
+      noBtn.textContent = noPhrases[noClickCount % noPhrases.length];
+
+      // Grow the Yes button
+      if (noClickCount <= 10) {
+        yesBtn.style.padding = `${16 + noClickCount * 2}px ${48 + noClickCount * 5}px`;
+        yesBtn.style.fontSize = `${1.3 + noClickCount * 0.07}rem`;
+      }
+
+      if (!noBtnFleeing) {
+        // First click: peel button off the card and give it fixed positioning
+        const rect = noBtn.getBoundingClientRect();
+        document.body.appendChild(noBtn);
+        noBtn.style.position = 'fixed';
+        noBtn.style.left = rect.left + 'px';
+        noBtn.style.top = rect.top + 'px';
+        noBtn.style.margin = '0';
+        noBtn.style.zIndex = '999';
+        noBtnFleeing = true;
+        // Add transition class after one frame so the initial position is painted first
+        requestAnimationFrame(() => {
+          noBtn.classList.add('fleeing');
+          setTimeout(moveNoBtnRandom, 30);
+        });
+      } else {
+        moveNoBtnRandom();
+      }
+    }
+
+    function moveNoBtnRandom() {
+      const m = 20;
+      noBtn.style.left = m + Math.random() * (window.innerWidth - noBtn.offsetWidth - m * 2) + 'px';
+      noBtn.style.top = m + Math.random() * (window.innerHeight - noBtn.offsetHeight - m * 2) + 'px';
+    }
+
+    /* ── YES HANDLER ────────────────────────────────────── */
+    function handleYes() {
+      if (noBtn.parentElement) noBtn.style.display = 'none';
+      launchConfetti();
+      goToPage(3);
+    }
+
+    /* ── CALENDAR ───────────────────────────────────────── */
+    let calDate = new Date();
+    let selectedDate = null;
+    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'];
+
+    function renderCalendar() {
+      const y = calDate.getFullYear(), m = calDate.getMonth();
+      document.getElementById('calMonthYear').textContent = MONTHS[m] + ' ' + y;
+      const grid = document.getElementById('calDays');
+      grid.innerHTML = '';
+      const firstDay = new Date(y, m, 1).getDay();
+      const daysIn = new Date(y, m + 1, 0).getDate();
+      const today = new Date();
+      for (let i = 0; i < firstDay; i++) {
+        const e = document.createElement('div'); e.className = 'cal-day empty'; grid.appendChild(e);
+      }
+      for (let d = 1; d <= daysIn; d++) {
+        const cell = document.createElement('div');
+        cell.className = 'cal-day'; cell.textContent = d;
+        if (today.getFullYear() === y && today.getMonth() === m && today.getDate() === d) cell.classList.add('today');
+        if (selectedDate && selectedDate.getFullYear() === y && selectedDate.getMonth() === m && selectedDate.getDate() === d) cell.classList.add('selected');
+        cell.addEventListener('click', () => { selectedDate = new Date(y, m, d); renderCalendar(); });
+        grid.appendChild(cell);
+      }
+    }
+    function prevMonth() { calDate.setMonth(calDate.getMonth() - 1); renderCalendar(); }
+    function nextMonth() { calDate.setMonth(calDate.getMonth() + 1); renderCalendar(); }
+
+    /* ── MAP ────────────────────────────────────────────── */
+    let mapObj = null, mapMarker = null, selectedLocation = null, mapReady = false;
+
+    // Cute pink Google Maps style (if key provided)
+    const CUTE_MAP_STYLES = [
+      { featureType: 'water', elementType: 'geometry.fill', stylers: [{ color: '#D4B0E8' }] },
+      { featureType: 'landscape', elementType: 'geometry.fill', stylers: [{ color: '#FFF0F5' }] },
+      { featureType: 'road.highway', elementType: 'geometry.fill', stylers: [{ color: '#FFB6C1' }] },
+      { featureType: 'road.arterial', elementType: 'geometry.fill', stylers: [{ color: '#FFC0CB' }] },
+      { featureType: 'road.local', elementType: 'geometry.fill', stylers: [{ color: '#FFD1DC' }] },
+      { featureType: 'poi', elementType: 'geometry.fill', stylers: [{ color: '#FCE4EC' }] },
+      { featureType: 'poi.park', elementType: 'geometry.fill', stylers: [{ color: '#C8F0C8' }] },
+      { featureType: 'transit', elementType: 'geometry.fill', stylers: [{ color: '#F8BBD9' }] },
+      { elementType: 'labels.text.fill', stylers: [{ color: '#8B4B8B' }] },
+      { elementType: 'labels.text.stroke', stylers: [{ color: '#FFF0F5' }] },
+    ];
+
+    function initMap() {
+      if (mapReady) return;
+      mapReady = true;
+
+      // Using Leaflet (OpenStreetMap) fallback always - no Google Maps or EmailJS dependencies
+      setTimeout(createLeafletMap, 160);
+    }
+
+    function createLeafletMap() {
+      const pinkIcon = L.divIcon({
+        className: '',
+        html: '<div style="font-size:2rem;line-height:1;filter:drop-shadow(0 2px 5px rgba(0,0,0,.3));">📍</div>',
+        iconSize: [32, 32], iconAnchor: [16, 32],
+      });
+
+      mapObj = L.map('map').setView([43.238949, 76.889709], 13);
+      // CartoDB Positron – clean, minimal, elegant
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '© <a href="https://carto.com">CARTO</a> © <a href="https://osm.org">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(mapObj);
+
+      mapObj.on('click', e => {
+        selectedLocation = { lat: e.latlng.lat, lng: e.latlng.lng };
+        if (mapMarker) {
+          mapMarker.setLatLng(e.latlng);
+        } else {
+          mapMarker = L.marker(e.latlng, { icon: pinkIcon }).addTo(mapObj);
+        }
+        document.getElementById('locationDisplay').innerHTML =
+          '📍 <strong>Pin set!</strong> ' + e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5);
+      });
+
+      mapObj.invalidateSize();
+    }
+
+    /* ── SEND DATE ──────────────────────────────────────── */
+    function sendDate() {
+      if (!selectedDate) {
+        const grid = document.getElementById('calDays');
+        grid.style.transform = 'translateX(-8px)';
+        setTimeout(() => grid.style.transform = 'translateX(8px)', 100);
+        setTimeout(() => grid.style.transform = '', 200);
+        alert('Please choose a date first! 📅💕');
+        return;
+      }
+
+      const time = document.getElementById('timeInput').value;
+      const comment = document.getElementById('commentInput').value.trim();
+      const dateStr = selectedDate.toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+
+      const locText = selectedLocation
+        ? selectedLocation.lat.toFixed(5) + ', ' + selectedLocation.lng.toFixed(5)
+        : 'Not specified';
+      const mapLink = selectedLocation
+        ? `https://maps.google.com/?q=${selectedLocation.lat},${selectedLocation.lng}`
+        : 'No location selected';
+
+      // Just show the confirmation without any email
+      sendTelegramNotification(dateStr, time, locText, mapLink, comment);
+
+      showConfirmation(dateStr, time, locText, mapLink, comment);
+    }
+
+    function showConfirmation(dateStr, time, loc, mapLink, comment) {
+      const html =
+        `<p>📅 <strong>Дата:</strong> ${dateStr}</p>` +
+        `<p>🕐 <strong>Время:</strong> ${time}</p>` +
+        `<p>📍 <strong>Локация:</strong> ${loc}</p>` +
+        (mapLink !== 'No location selected'
+          ? `<p>🗺️ <a href="${mapLink}" target="_blank" style="color:#c44d8a;">Open in Google Maps</a></p>` : '') +
+        (comment ? `<p>💭 <strong>Заметки:</strong> ${comment}</p>` : '');
+      document.getElementById('confirmDetails').innerHTML = html;
+      goToPage(4);
+    }
+  </script>
+</body>
+
+</html>
